@@ -11,6 +11,7 @@ pipeline {
         stage('Checkout Code') {
             steps {
                 git branch: 'main',
+                    credentialsId: 'github-creds',
                     url: 'https://github.com/ramesh2617/mlops-devops-pipeline.git'
             }
         }
@@ -18,7 +19,8 @@ pipeline {
         stage('Setup Python Environment') {
             steps {
                 bat '''
-                python --version
+                python -m venv venv
+                venv\\Scripts\\activate
                 pip install --upgrade pip
                 pip install -r requirements.txt
                 '''
@@ -28,7 +30,17 @@ pipeline {
         stage('Run ML Training') {
             steps {
                 bat '''
-                python src/train.py
+                venv\\Scripts\\activate
+                python src\\train.py
+                '''
+            }
+        }
+
+        stage('Run Unit Tests') {
+            steps {
+                bat '''
+                venv\\Scripts\\activate
+                pytest tests
                 '''
             }
         }
@@ -44,10 +56,10 @@ pipeline {
 
     post {
         success {
-            echo '✅ CI Pipeline completed successfully'
+            echo "✅ MLOps CI pipeline completed successfully"
         }
         failure {
-            echo '❌ CI Pipeline failed'
+            echo "❌ Pipeline failed – check logs"
         }
     }
 }
