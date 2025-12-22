@@ -1,11 +1,8 @@
 pipeline {
     agent any
 
-    tools {
-        python 'Python-3.12'
-    }
-
     environment {
+        PYTHON_EXE = "C:\\Users\\Mahi\\AppData\\Local\\Programs\\Python\\Python312\\python.exe"
         IMAGE_NAME = "mlops-api"
         IMAGE_TAG  = "jenkins-${BUILD_NUMBER}"
     }
@@ -22,14 +19,14 @@ pipeline {
 
         stage('Verify Python') {
             steps {
-                bat 'python --version'
+                bat '"%PYTHON_EXE%" --version'
             }
         }
 
         stage('Setup Python Environment') {
             steps {
                 bat '''
-                python -m venv venv
+                "%PYTHON_EXE%" -m venv venv
                 venv\\Scripts\\python -m pip install --upgrade pip
                 venv\\Scripts\\pip install -r requirements.txt
                 '''
@@ -66,7 +63,7 @@ pipeline {
             echo "✅ Jenkins MLOps pipeline completed successfully"
         }
         failure {
-            echo "❌ Jenkins pipeline failed"
+            echo "❌ Jenkins MLOps pipeline failed"
         }
     }
 }
