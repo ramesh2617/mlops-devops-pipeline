@@ -1,6 +1,6 @@
 pipeline {
-    /* 
-     * Run pipeline on any available Jenkins agent
+    /*
+     * Run on any available Jenkins agent
      */
     agent any
 
@@ -8,7 +8,7 @@ pipeline {
      * Global environment variables
      */
     environment {
-        // Absolute path to system-installed Python (required for Windows Jenkins)
+        // Absolute path to system-installed Python (required for Windows Jenkins service)
         PYTHON_EXE = "C:\\Users\\Mahi\\AppData\\Local\\Programs\\Python\\Python312\\python.exe"
 
         // Docker image name and dynamic tag using Jenkins build number
@@ -30,7 +30,8 @@ pipeline {
         }
 
         /*
-         * Stage 2: Verify Python availability for Jenkins agent
+         * Stage 2: Verify Python availability
+         * Ensures Jenkins agent can access Python
          */
         stage('Verify Python') {
             steps {
@@ -52,7 +53,7 @@ pipeline {
         }
 
         /*
-         * Stage 4: Train ML model (MLOps step)
+         * Stage 4: Train ML model (MLOps training step)
          */
         stage('Run ML Training') {
             steps {
@@ -74,7 +75,9 @@ pipeline {
         }
 
         /*
-         * Stage 6: Build Docker image for the ML inference service
+         * Stage 6: Build Docker image for ML inference service
+         * Image is built in Docker Desktop and is directly accessible
+         * by Docker Desktop Kubernetes (no image load required)
          */
         stage('Build Docker Image') {
             steps {
@@ -85,20 +88,8 @@ pipeline {
         }
 
         /*
-         * Stage 7: Load locally built image into Minikube
-         * This avoids ImagePullBackOff in local Kubernetes clusters
-         */
-        stage('Load Image into Minikube') {
-            steps {
-                bat '''
-                minikube image load %IMAGE_NAME%:%IMAGE_TAG%
-                '''
-            }
-        }
-
-        /*
-         * Stage 8: Update Kubernetes deployment manifest with new image tag
-         * This is the GitOps handoff to Argo CD
+         * Stage 7: Update Kubernetes deployment manifest with new image tag
+         * This is the GitOps handoff point to Argo CD
          */
         stage('Update K8s Image Tag (GitOps)') {
             steps {
@@ -111,7 +102,7 @@ pipeline {
         }
 
         /*
-         * Stage 9: Commit and push updated Kubernetes manifests
+         * Stage 8: Commit and push updated Kubernetes manifests
          * Argo CD will automatically detect and deploy the change
          */
         stage('Commit & Push K8s Manifests') {
@@ -120,22 +111,4 @@ pipeline {
                 git config user.email "jenkins@local"
                 git config user.name "jenkins"
                 git add k8s\\deployment.yaml
-                git commit -m "Update image tag to %IMAGE_TAG%" || exit 0
-                git push
-                '''
-            }
-        }
-    }
-
-    /*
-     * Post-build notifications
-     */
-    post {
-        success {
-            echo "✅ Jenkins CI completed successfully | Argo CD will deploy automatically"
-        }
-        failure {
-            echo "❌ Jenkins CI pipeline failed"
-        }
-    }
-}
+                git commit -m "Update image tag to %I
