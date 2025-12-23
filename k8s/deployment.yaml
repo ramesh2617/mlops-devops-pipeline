@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: mlops-api
-          image: mlops-api:jenkins-0   # Jenkins will auto-update this
+          image: mlops-api:jenkins-15   # Jenkins will auto-update this
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
