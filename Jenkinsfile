@@ -75,7 +75,7 @@ print('Updated image tag to %IMAGE_TAG%')"
                 git config user.name "jenkins"
                 git add k8s\\deployment.yaml
                 git commit -m "Update image tag to %IMAGE_TAG%" || exit 0
-                git push
+                git push origin main
                 """
             }
         }
