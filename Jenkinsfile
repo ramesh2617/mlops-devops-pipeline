@@ -2,15 +2,12 @@ pipeline {
     agent any
 
     environment {
-        // Python path for Windows Jenkins
+        // Python executable path (Windows Jenkins)
         PYTHON_EXE = "C:\\Users\\Mahi\\AppData\\Local\\Programs\\Python\\Python312\\python.exe"
 
-        // Docker image info
+        // Docker image details
         IMAGE_NAME = "mlops-api"
         IMAGE_TAG  = "jenkins-${BUILD_NUMBER}"
-        K8S_DEPLOYMENT = "mlops-api"
-        K8S_CONTAINER  = "mlops-api"
-        K8S_NAMESPACE  = "default"
     }
 
     stages {
@@ -57,12 +54,37 @@ pipeline {
             }
         }
 
-        stage('Deploy to Kubernetes (Update Image)') {
+        stage('Update K8s Manifest Image Tag (GitOps)') {
             steps {
                 bat """
-                kubectl set image deployment/%K8S_DEPLOYMENT% \
-                  %K8S_CONTAINER%=%IMAGE_NAME%:%IMAGE_TAG% \
-                  -n %K8S_NAMESPACE%
+                "%PYTHON_EXE%" - <<EOF
+from pathlib import Path
+
+file = Path("k8s/deployment.yaml")
+data = file.read_text()
+
+new_data = []
+for line in data.splitlines():
+    if line.strip().startswith("image:"):
+        new_data.append(f"        image: {\"mlops-api\"}:{\"%IMAGE_TAG%\"}")
+    else:
+        new_data.append(line)
+
+file.write_text("\\n".join(new_data))
+print("Updated image tag to %IMAGE_TAG%")
+EOF
+                """
+            }
+        }
+
+        stage('Commit & Push K8s Manifests') {
+            steps {
+                bat """
+                git config user.email "jenkins@local"
+                git config user.name "jenkins"
+                git add k8s\\deployment.yaml
+                git commit -m "Update image tag to %IMAGE_TAG%" || exit 0
+                git push
                 """
             }
         }
@@ -70,10 +92,10 @@ pipeline {
 
     post {
         success {
-            echo "✅ Jenkins CI/CD successful | Kubernetes deployment updated"
+            echo "✅ Jenkins CI finished | Argo CD will deploy from Git"
         }
         failure {
-            echo "❌ Jenkins CI/CD failed"
+            echo "❌ Jenkins CI failed"
         }
     }
 }
