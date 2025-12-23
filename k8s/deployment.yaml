@@ -2,6 +2,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: mlops-api
+  labels:
+    app: mlops-api
 spec:
   replicas: 1
   selector:
@@ -13,8 +15,15 @@ spec:
         app: mlops-api
     spec:
       containers:
-      - name: mlops-api
-        image: mlops-api:jenkins-14
-        imagePullPolicy: IfNotPresent
-        ports:
-        - containerPort: 8000
+        - name: mlops-api
+          image: mlops-api:jenkins-0   # Jenkins will auto-update this
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "500m"
+              memory: "1Gi"
