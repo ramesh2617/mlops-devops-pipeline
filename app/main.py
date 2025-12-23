@@ -1,28 +1,20 @@
 from fastapi import FastAPI
-import joblib
-import os
-from pydantic import BaseModel
+from app.schema import CustomerInput, PredictionResponse
+from app.predict import ChurnPredictor
 
-# Initialize FastAPI app
-app = FastAPI(title="MLOps Model API")
+app = FastAPI(
+    title="Customer Churn Prediction API",
+    version="1.0.0"
+)
 
-# Load model
-MODEL_PATH = "models/model.pkl"
+predictor = ChurnPredictor()
 
-if not os.path.exists(MODEL_PATH):
-    raise FileNotFoundError("Model file not found. Train the model first.")
-
-model = joblib.load(MODEL_PATH)
-
-# Input schema
-class IrisInput(BaseModel):
-    features: list[float]
 
 @app.get("/")
 def health_check():
-    return {"status": "Model API is running"}
+    return {"status": "API is running"}
 
-@app.post("/predict")
-def predict(data: IrisInput):
-    prediction = model.predict([data.features])
-    return {"prediction": int(prediction[0])}
+
+@app.post("/predict", response_model=PredictionResponse)
+def predict_churn(data: CustomerInput):
+    return predictor.predict(data.dict())
