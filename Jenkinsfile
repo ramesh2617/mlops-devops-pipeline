@@ -57,22 +57,13 @@ pipeline {
         stage('Update K8s Manifest Image Tag (GitOps)') {
             steps {
                 bat """
-                "%PYTHON_EXE%" - <<EOF
-from pathlib import Path
-
-file = Path("k8s/deployment.yaml")
-data = file.read_text()
-
-new_data = []
-for line in data.splitlines():
-    if line.strip().startswith("image:"):
-        new_data.append(f"        image: {\"mlops-api\"}:{\"%IMAGE_TAG%\"}")
-    else:
-        new_data.append(line)
-
-file.write_text("\\n".join(new_data))
-print("Updated image tag to %IMAGE_TAG%")
-EOF
+                "%PYTHON_EXE%" -c "from pathlib import Path; \
+p=Path('k8s/deployment.yaml'); \
+lines=p.read_text().splitlines(); \
+out=[]; \
+[ out.append(('        image: mlops-api:%IMAGE_TAG%' if l.strip().startswith('image:') else l)) for l in lines ]; \
+p.write_text('\\\\n'.join(out)); \
+print('Updated image tag to %IMAGE_TAG%')"
                 """
             }
         }
