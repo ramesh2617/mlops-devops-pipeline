@@ -2,7 +2,10 @@ pipeline {
     agent any
 
     environment {
+        // System Python path for Windows Jenkins service
         PYTHON_EXE = "C:\\Users\\Mahi\\AppData\\Local\\Programs\\Python\\Python312\\python.exe"
+
+        // Docker image details
         IMAGE_NAME = "mlops-api"
         IMAGE_TAG  = "jenkins-${BUILD_NUMBER}"
     }
@@ -53,11 +56,9 @@ pipeline {
 
         stage('Update K8s Image Tag (GitOps)') {
             steps {
-                bat """
-                powershell -Command "(Get-Content k8s\\deployment.yaml) `
-                  -replace 'image: mlops-api:.*', 'image: mlops-api:%IMAGE_TAG%' `
-                  | Set-Content k8s\\deployment.yaml"
-                """
+                bat '''
+                powershell -Command "(Get-Content k8s\\deployment.yaml) -replace 'image: mlops-api:.*', 'image: mlops-api:%IMAGE_TAG%' | Set-Content k8s\\deployment.yaml"
+                '''
             }
         }
 
@@ -76,10 +77,10 @@ pipeline {
 
     post {
         success {
-            echo "✅ Jenkins CI completed successfully | Argo CD will deploy automatically"
+            echo "✅ Jenkins CI successful | Argo CD will auto-deploy"
         }
         failure {
-            echo "❌ Jenkins CI pipeline failed"
+            echo "❌ Jenkins CI failed"
         }
     }
 }
