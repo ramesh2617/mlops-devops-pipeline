@@ -2,9 +2,15 @@ pipeline {
     agent any
 
     environment {
+        // Python path for Windows Jenkins
         PYTHON_EXE = "C:\\Users\\Mahi\\AppData\\Local\\Programs\\Python\\Python312\\python.exe"
+
+        // Docker image info
         IMAGE_NAME = "mlops-api"
         IMAGE_TAG  = "jenkins-${BUILD_NUMBER}"
+        K8S_DEPLOYMENT = "mlops-api"
+        K8S_CONTAINER  = "mlops-api"
+        K8S_NAMESPACE  = "default"
     }
 
     stages {
@@ -51,26 +57,12 @@ pipeline {
             }
         }
 
-        stage('Update K8s Image Tag (GitOps)') {
+        stage('Deploy to Kubernetes (Update Image)') {
             steps {
                 bat """
-                powershell -NoProfile -Command "& {
-                    (Get-Content 'k8s\\deployment.yaml') `
-                        -replace 'image: mlops-api:.*', 'image: mlops-api:%IMAGE_TAG%' |
-                    Set-Content 'k8s\\deployment.yaml'
-                }"
-                """
-            }
-        }
-
-        stage('Commit & Push K8s Manifests') {
-            steps {
-                bat """
-                git config user.email "jenkins@local"
-                git config user.name "jenkins"
-                git add k8s\\deployment.yaml
-                git commit -m "Update image tag to %IMAGE_TAG%" || exit 0
-                git push
+                kubectl set image deployment/%K8S_DEPLOYMENT% \
+                  %K8S_CONTAINER%=%IMAGE_NAME%:%IMAGE_TAG% \
+                  -n %K8S_NAMESPACE%
                 """
             }
         }
@@ -78,10 +70,10 @@ pipeline {
 
     post {
         success {
-            echo "✅ Jenkins CI successful | Argo CD will auto-deploy"
+            echo "✅ Jenkins CI/CD successful | Kubernetes deployment updated"
         }
         failure {
-            echo "❌ Jenkins CI failed"
+            echo "❌ Jenkins CI/CD failed"
         }
     }
 }
