@@ -1,1 +1,20 @@
-apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: mlops-api\n  labels:\n    app: mlops-api\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: mlops-api\n  template:\n    metadata:\n      labels:\n        app: mlops-api\n    spec:\n      containers:\n        - name: mlops-api\n        image: mlops-api:jenkins-14\n          imagePullPolicy: IfNotPresent\n          ports:\n            - containerPort: 8000
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mlops-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mlops-api
+  template:
+    metadata:
+      labels:
+        app: mlops-api
+    spec:
+      containers:
+      - name: mlops-api
+        image: mlops-api:jenkins-14
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8000
